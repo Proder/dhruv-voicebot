@@ -3,8 +3,6 @@ import os
 import google.generativeai as genai
 from dotenv import load_dotenv
 import time
-import speech_recognition as sr
-import uuid
 import asyncio
 import edge_tts
 from io import BytesIO
@@ -43,7 +41,6 @@ st.markdown("""
 
 # Initialize components
 try:
-    recognizer = sr.Recognizer()
     model = genai.GenerativeModel("gemini-1.5-flash")
     PERSONALITY_PROMPT = get_personality_prompt()
 except Exception as e:
@@ -52,35 +49,6 @@ except Exception as e:
 
 if "persona_added" not in st.session_state:
     st.session_state.persona_added = True
-
-# Record audio with improved error handling
-def record_audio():
-    try:
-        with sr.Microphone() as source:
-            # Adjust for ambient noise for better recognition
-            recognizer.adjust_for_ambient_noise(source, duration=0.5)
-            st.info("🎙️ Speak now...")
-            # Increased timeout and phrase time limit for better capture
-            audio = recognizer.listen(source, timeout=10, phrase_time_limit=10)
-        
-        with st.spinner("Processing speech..."):
-            text = recognizer.recognize_google(audio)
-            st.success(f"Heard: {text}")
-            return text
-            
-    except sr.WaitTimeoutError:
-        st.warning("No speech detected. Please try again.")
-    except sr.UnknownValueError:
-        st.error("Could not understand audio. Please speak clearly.")
-    except sr.RequestError as e:
-        st.error(f"Speech recognition service error: {str(e)}")
-    except Exception as e:
-        st.error(f"Audio recording error: {str(e)}")
-    
-    return None
-
-# Use Edge TTS
-
 
 # Generate audio with improved error handling
 def speak_text(text, voice="en-GB-RyanNeural"):
@@ -149,11 +117,10 @@ if not st.session_state.chat_history:
         <div style='background-color: #f0f2f6; padding: 1rem; border-radius: 10px; margin-bottom: 1rem;'>
             <p style='margin: 0; text-align: center; color: #666;'>
                 👋 Hi! I'm Dhruv's AI assistant. Ask me about his background, projects, or experiences!
-                <br><small>You can type your question or use the mic button 🎤</small>
+                <br><small>Type your question below and get audio responses</small>
             </p>
         </div>
     """, unsafe_allow_html=True)
-
 
 # Render all messages with improved styling
 with st.container():
@@ -189,24 +156,20 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-col1, col2 = st.columns([8, 1])
+# Cloud deployment notice
+st.markdown("""
+    <div style='background-color: #fff3cd; padding: 10px; border-radius: 10px; margin: 10px 0; border-left: 4px solid #ffc107;'>
+        <small>ℹ️ <strong>Cloud Version:</strong> This app is optimized for Streamlit Cloud. All features including text-to-speech are working!</small>
+    </div>
+""", unsafe_allow_html=True)
 
 # Initialize input clearing mechanism and counter for forcing widget reset
 if "input_counter" not in st.session_state:
     st.session_state.input_counter = 0
 
-with col1:
-    # Use dynamic key to force widget recreation and clearing
-    user_input = st.text_input("Type your message", key=f"text_input_{st.session_state.input_counter}", 
-                              label_visibility="collapsed", placeholder="Ask me anything about Dhruv...")
-with col2:
-    mic = st.button("🎤", help="Click to speak", use_container_width=True)
-
-# Capture mic input
-if mic:
-    spoken = record_audio()
-    if spoken:
-        user_input = spoken
+# Use dynamic key to force widget recreation and clearing
+user_input = st.text_input("Type your message", key=f"text_input_{st.session_state.input_counter}", 
+                          label_visibility="collapsed", placeholder="Ask me anything about Dhruv...")
 
 # Process input with improved error handling
 if user_input and user_input.strip():  # Check for non-empty input
@@ -254,7 +217,7 @@ if user_input and user_input.strip():  # Check for non-empty input
 
 # Footer
 st.markdown("""
-    <div style='text-align: center; margin-top: 2rem; padding: 1rem; color: #666; font-size: 0.9rem;'>
+    <div style='text-align: center; margin-top: 5rem; bottom: 0; padding: 1rem; color: #666; font-size: 0.9rem;'>
         <a href='https://dhruvshah-portfolio.vercel.app/' target='_blank'>Dhruv's Portfolio</a>
     </div>
 """, unsafe_allow_html=True)

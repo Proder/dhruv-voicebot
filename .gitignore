@@ -68,7 +68,8 @@ tmp/
 prompts.md
 perfect_app.py
 test.py
-personality.py
+app_local.py
+requirements_local.txt
 
 # Secrets and sensitive data
 secrets/
